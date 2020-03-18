@@ -6,61 +6,53 @@ import time
 import os
 import json
 import requests
+from urllib.request import urlopen
 
 api_key = BinanceKey1['api_key']
 api_secret = BinanceKey1['api_secret']
-
 os.system('clear')
 print('Connecting to BINANCE...')
 client = Client(api_key, api_secret)
-print('connected.')
+print('status : Connected.')
+BLYNK_AUTH = '9HIeo403qLUzAKi5UYIpCCiAy7C7nJeK'
+url = 'http://blynk-cloud.com/' + BLYNK_AUTH 
 
-def get_bitkub():
-    url = "https://api.bitkub.com/api/market/ticker"
-    # print ("Request JSON from : " + url)
-    response = requests.get(url)
-    data = response.json()
-    asset = 'THB_BTC'
-    price = float(data["THB_BTC"]["last"])
-    # print('\nBITKUB')
-    # print(asset, ':', price)
-    return(price)
 
-def get_binance():
+def update(pin, value):
+    payload = url + '/update/' + pin + '?value=' + str(value)
+    urlopen(payload)
+    print(payload)
+    
+def get_delta(symbol1, symbol2):
     tickers = client.get_all_tickers()
-    asset = next(item for item in tickers if item['symbol'] == 'BTCUSDT')['symbol']
-    price = float(next(item for item in tickers if item['symbol'] == 'BTCUSDT')['price']) * 31.15
-    # print('\nBINANCE')
-    # print(asset, ':', price)
-    return(price)
-
-def history_update(balance):
-    now             = datetime.now()
-    current_time    = now.strftime("%Y%m%d,%H:%M:%S")
-    balance         = str(balance)
-    payload         = 'python3 ./google/append2gsheet.py --data ' + current_time + ',' + str(balance) + ' --sheetid 1uxG4YKI2v5tb-ZJkWvX58t8FdHmx93xAmhEnXeB9SRA --range "' + 'history' + '" --noauth_local_webserver'
-    os.system(payload)
+    asset1 = next(item for item in tickers if item['symbol'] == symbol1)['symbol']
+    price1 = float(next(item for item in tickers if item['symbol'] == symbol1)['price'])
+    asset2 = next(item for item in tickers if item['symbol'] == symbol2)['symbol']
+    price2 = float(next(item for item in tickers if item['symbol'] == symbol2)['price'])
+    delta = round((price2 - price1),2)
+    print(asset1, ':', price1)
+    print(asset2, ':', price2)
+    print('delta :', delta)
+    return(delta)
 
 while True:
-    try:
-        bitkub = get_bitkub()
-        binance = get_binance()
-        ratio1 = (binance-bitkub)/bitkub*100
-        ratio2 = (bitkub-binance)/binance*100
-        delta = bitkub-binance
+    delta = get_delta('LTCUSDT', 'XMRUSDT')
+    update('v1',delta)
 
-        os.system('clear')
+    if delta > 2:
+        print('sell XMR -> buy LTC')
 
-        if bitkub < binance:
-            print('BITKUB   ->  BINANCE')
-        elif bitkub > binance:
-            print('BINANCE  ->  BITKUB')
-        print('\ndelta :', abs(delta))
-        print('ratio1 :', ratio1)
-        print('ratio2 :', ratio2)
-        history_update(delta)
-        time.sleep(0.5)
+    elif delta < 1:
+        print('sell LTC -> buy XMR')
 
-    except Exception as e:
-        print(e)
-    
+    time.sleep(0.1)
+    os.system('clear')
+
+
+'''
+
+XMR - LTC > 2   then    sell XMR -> buy LTC
+XMR - LTC < 1   then    sell LTC -> buy XMR
+
+'''
+
