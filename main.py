@@ -20,7 +20,7 @@ url = 'http://blynk-cloud.com/' + BLYNK_AUTH
 
 def update(pin, value):
     payload = url + '/update/' + pin + '?value=' + str(value)
-    requests.get(payload)
+    urlopen(payload)
     print(payload)
     
 def get_delta(symbol1, symbol2):
