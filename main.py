@@ -126,6 +126,7 @@ while True:
             LTCtoXMR()
         else:
             print('nothing.')
+        time.sleep(1)
         os.system('clear')
     except Exception as e:
         print('ERROR :', e)
